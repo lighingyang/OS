@@ -51,6 +51,7 @@ struct PCB{
 功能:进程
 */
 struct process{
+    int waittime;
     int runtime;
 	PCB pcb;
 	process(){
@@ -66,6 +67,8 @@ struct process{
 		pcb.starttime = st;
 		pcb.blocktime = 0;
 		pcb.state = 'W';
+		runtime = 0;
+		waittime = 0;
 	}
 };
 
@@ -183,10 +186,24 @@ void input(){
 }
 
 /*
+功能：更新就绪队列中的进程的cls
+*/
+void updata_rdycls(int pid){
+    for(int i=0;i<n;i++){
+        if(p[i].pcb.state == 'R'){
+            p[i].waittime++;
+            if(p[i].waittime%p[i].pcb.startblock==0){
+                p[i].pcb.cls++;
+            }
+        }
+    }
+    return ;
+}
+
+/*
 功能: sort排序方法
 描述：先按照时间到来的顺序进行升序排序，再按照进程的优先级升序排序
 */
-
 bool cmp(process a,process b){
 	if(a.pcb.come!=b.pcb.come) return a.pcb.come<b.pcb.come;
 	return a.pcb.cls>b.pcb.cls;
@@ -224,6 +241,7 @@ void solve(){
             printf("当前时刻:%d\n",now_time);
             updata_block();
             solve_ready(now_time);
+            updata_rdycls(p[now].pcb.id);
             printf("当前时刻:%d,进程%d正在运行\n",now_time,p[now].pcb.id);
 		}
 		printf("进程%d运行了%d时间，进程结束\n",p[now].pcb.id,ttt);
