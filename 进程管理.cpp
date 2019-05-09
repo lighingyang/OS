@@ -75,6 +75,28 @@ struct process{
 process p[maxn];
 
 /*
+功能：查看此刻阻塞队列中的进程
+*/
+void find_block(){
+    printf("阻塞队列中的进程为：");
+    for(int i=0;i<n;i++){
+        if(p[i].pcb.state == 'B') printf("  进程%d",p[i].pcb.id);
+    }
+    printf("\n");
+}
+
+/*
+功能：查看此刻就绪队列中的进程
+*/
+void find_ready(){
+    printf("就绪队列中的进程为：");
+    for(int i=0;i<n;i++){
+        if(p[i].pcb.state == 'R') printf("  进程%d",p[i].pcb.id);
+    }
+    printf("\n");
+}
+
+/*
 功能：检查当前时刻有没有到来的进程
 */
 void solve_ready(int now_time){
@@ -104,6 +126,8 @@ void updata_block(){
         p[now].pcb.blocktime ++;
         if(p[now].pcb.blocktime == p[now].pcb.starttime){
             q1.push(now);
+            p[now].pcb.state = 'R';
+            p[now].pcb.blocktime = 0;
             printf("进程%d从阻塞队列进入就绪队列\n",p[now].pcb.id);
         }
         else{
@@ -123,7 +147,7 @@ void updata_block(){
 */
 int find_maxcls(){
     int mmmax = 0;
-    int idx = 0;
+    int idx = -1;
     for(int i=0;i<n;i++){
         if(p[i].pcb.state == 'R'&&p[i].pcb.cls>mmmax){
             mmmax = p[i].pcb.cls;
@@ -219,16 +243,27 @@ void solve(){
 	while(num<n){
 		printf("当前时刻:%d\n",now_time);
 		solve_ready(now_time);
-
+		find_ready();
+        find_block();
 		/*
             当时如果没有进程在就绪队列中就跳过
 		*/
+		//cout<<"q1 :"<<q1.size()<<endl;
+		//printf("11111   %d\n",q1.front());
 		if(q1.empty()){
             now_time++;
+            updata_block();
             continue;
 		}
 
         int now = find_maxcls();
+
+        if(now == -1) {
+            now_time++;
+            updata_block();
+            continue;
+        }
+
 		p[now].pcb.state = 'N';//运行
 		printf("进程%d开始运行\n",p[now].pcb.id);
 		int ttime = min(p[now].pcb.alltime - p[now].pcb.cputime,p[now].pcb.startblock);
@@ -243,6 +278,8 @@ void solve(){
             solve_ready(now_time);
             updata_rdycls(p[now].pcb.id);
             printf("当前时刻:%d,进程%d正在运行\n",now_time,p[now].pcb.id);
+            find_ready();
+            find_block();
 		}
 		printf("进程%d运行了%d时间，进程结束\n",p[now].pcb.id,ttt);
 
@@ -260,6 +297,7 @@ void solve(){
             p[now].pcb.state = 'B';
             p[now].pcb.cls -= 3;
             printf("进程%d进入阻塞队列\n",p[now].pcb.id);
+            updata_ready(p[now].pcb.id);
             p[now].runtime = 0;
             continue;
 		}
